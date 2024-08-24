@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'core'
+    'core',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -125,11 +130,27 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': '*****',
-        'HOST': 'localhost',  # Set to your PostgreSQL server's address if not local
-        'PORT': '5432',       # Default PostgreSQL port
+        'PASSWORD': '**',
+        'HOST': 'localhost',
+        'PORT': '5432',      
     }
 }
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dqcskty0v',
+    'API_KEY': '192677239772714',
+    'API_SECRET': 'T3dnebMxeRe471zPeH7_Gk-X560',
+}
+
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=CLOUDINARY_STORAGE['API_SECRET']
+)
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

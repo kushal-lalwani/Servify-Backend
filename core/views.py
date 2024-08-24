@@ -9,37 +9,31 @@ from .serializers import UserProfileSerializer, ServiceSerializer, EmployeeSeria
     ServiceCategorySerializer
 
 
-# ViewSet for UserProfile
 class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 
-# ViewSet for ServiceCategory
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
     queryset = ServiceCategory.objects.all()
     serializer_class = ServiceCategorySerializer
 
 
-# ViewSet for Service
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
 
 
-# ViewSet for Employee
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
 
 
-# ViewSet for Booking
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
 
 
-# Signup for regular users
 class UserSignupView(APIView):
     def post(self, request):
         data = request.data
@@ -63,7 +57,6 @@ class UserSignupView(APIView):
         return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
 
 
-# Signup for employees
 class EmployeeSignupView(APIView):
     def post(self, request):
         data = request.data
@@ -102,7 +95,6 @@ class EmployeeSignupView(APIView):
         return Response({'message': 'Employee created successfully'}, status=status.HTTP_201_CREATED)
 
 
-# Login
 class LoginView(APIView):
     def post(self, request):
         username = request.data.get('username')
@@ -117,3 +109,20 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+class HomePageAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        categories = ServiceCategory.objects.all()
+        category_data = ServiceCategorySerializer(categories, many=True).data
+        
+        response_data = {
+            'categories': [
+                {'name': category['name'], 'image_url': category['image_url']}
+                for category in category_data
+            ]
+        }
+        for category in category_data:
+            response_data[category['name']] = category['services']
+        
+        return Response(response_data)

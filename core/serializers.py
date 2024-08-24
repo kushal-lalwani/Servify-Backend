@@ -37,14 +37,24 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return employee
 
 class ServiceSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
-        fields = ['id', 'category', 'name', 'description', 'price']
+        fields = ['id', 'name', 'description', 'price', 'image_url']
+    def get_image_url(self, obj):
+        return obj.image.url if obj.image else None
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    services = ServiceSerializer(many=True, read_only=True)
+
     class Meta:
         model = ServiceCategory
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'services', 'image_url']
+        
+    def get_image_url(self, obj):
+        return obj.image.url if obj.image else None
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:

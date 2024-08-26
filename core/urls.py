@@ -15,5 +15,5 @@ urlpatterns = [
     path('signup/employee/', EmployeeSignupView.as_view(), name='employee-signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('home/', HomePageAPIView.as_view(), name='home-page-api'),
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]

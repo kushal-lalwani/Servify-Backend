@@ -50,7 +50,7 @@ class Booking(models.Model):
         return f'{self.user.username} - {self.service.name} - {self.status}'
 
 class Review(models.Model):
-    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    service = models.ForeignKey(Service,related_name='reviews', on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     rating = models.PositiveIntegerField()
     comment = models.TextField(blank=True, null=True)

@@ -36,12 +36,20 @@ class EmployeeSerializer(serializers.ModelSerializer):
         employee = Employee.objects.create(profile=profile, **validated_data)
         return employee
 
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'service', 'user', 'rating', 'comment', 'created_at']
+        depth = 1  # This will show nested relationships (e.g., service name and user name)
+
 class ServiceSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
-
+    reviews = ReviewSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Service
-        fields = ['id', 'name', 'description', 'price', 'image_url']
+        fields = ['id', 'name', 'description', 'price', 'image_url', 'reviews']
+
     def get_image_url(self, obj):
         return obj.image.url if obj.image else None
 
@@ -61,8 +69,5 @@ class BookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = ['id', 'user', 'service', 'employee', 'date', 'status']
 
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ['id', 'service', 'user', 'rating', 'comment', 'created_at']
-        depth = 1  # This will show nested relationships (e.g., service name and user name)
+
+

@@ -29,6 +29,12 @@ SECRET_KEY = 'django-insecure-jzj0w6hk4-*_2$0ggd%pv6@4wk#+dia208q4mwf%l==%666gd6
 DEBUG = True
 
 ALLOWED_HOSTS = []
+CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "https://your-frontend-domain.com",
+# ]
+
 
 
 # Application definition
@@ -45,6 +51,7 @@ INSTALLED_APPS = [
     'core',
     'cloudinary',
     'cloudinary_storage',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -55,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
 
 ROOT_URLCONF = 'Servify.urls'
@@ -92,6 +100,9 @@ DATABASES = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
 }
 from datetime import timedelta
@@ -134,7 +145,7 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432',      
     }
-}
+}   
 
 
 CLOUDINARY_STORAGE = {

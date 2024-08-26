@@ -2,24 +2,29 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from .models import UserProfile, Service, Employee, Booking, ServiceCategory
-from .serializers import UserProfileSerializer, ServiceSerializer, EmployeeSerializer, BookingSerializer, \
-    ServiceCategorySerializer
+from .models import *
+from .serializers import *
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
 
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = ServiceCategory.objects.all()
     serializer_class = ServiceCategorySerializer
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
 
@@ -35,6 +40,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
 
 class UserSignupView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
         username = data.get('username')
@@ -58,6 +64,7 @@ class UserSignupView(APIView):
 
 
 class EmployeeSignupView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
         username = data.get('username')
@@ -96,6 +103,7 @@ class EmployeeSignupView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -111,6 +119,7 @@ class LoginView(APIView):
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class HomePageAPIView(APIView):
+    permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
         categories = ServiceCategory.objects.all()

@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, Employee, Service, ServiceCategory, Booking
+from .models import *
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,3 +61,8 @@ class BookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = ['id', 'user', 'service', 'employee', 'date', 'status']
 
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'service', 'user', 'rating', 'comment', 'created_at']
+        depth = 1  # This will show nested relationships (e.g., service name and user name)

@@ -83,3 +83,8 @@ class BookingSerializer(serializers.ModelSerializer):
 
 
 
+class PaymentSerializers(serializers.ModelSerializer):
+    class Meta:
+        model=Payment
+        fields=['user','order_id',' payment_id','signature','amount','currency',' status','created_at']
+

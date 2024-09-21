@@ -61,3 +61,17 @@ class Review(models.Model):
 
     def __str__(self):
         return f'Review by {self.user.username} on {self.service.name}'
+        
+
+class Payment(models.Model):
+        user = models.ForeignKey(User, on_delete=models.CASCADE)  # If user-specific payments are required
+        order_id = models.CharField(max_length=100, unique=True)
+        payment_id = models.CharField(max_length=100, blank=True, null=True)
+        signature = models.CharField(max_length=255, blank=True, null=True)
+        amount = models.DecimalField(max_digits=10, decimal_places=2)
+        currency = models.CharField(max_length=10, default='INR')
+        status = models.CharField(max_length=50, default='Pending')  # Track status (Pending, Success, Failed)
+        created_at = models.DateTimeField(auto_now_add=True)
+
+        def __str__(self):
+            return f"Payment {self.order_id} - {self.status}"

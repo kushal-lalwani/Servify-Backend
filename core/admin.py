@@ -42,3 +42,7 @@ class ReviewAdmin(admin.ModelAdmin):
     list_display = ('service', 'user', 'rating', 'comment', 'created_at')  # Fields to display in the admin list view
     search_fields = ('service__name', 'user__username', 'comment')  # Enable search functionality
     list_filter = ('rating', 'created_at')
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display=('user','amount')

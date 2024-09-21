@@ -27,6 +27,10 @@ SECRET_KEY = 'django-insecure-jzj0w6hk4-*_2$0ggd%pv6@4wk#+dia208q4mwf%l==%666gd6
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+from dotenv import load_dotenv
+load_dotenv()
+import os
+
 
 ALLOWED_HOSTS = []
 CORS_ALLOW_ALL_ORIGINS = True
@@ -108,8 +112,8 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
@@ -146,6 +150,12 @@ DATABASES = {
         'PORT': '5432',      
     }
 }   
+
+
+
+
+RAZORPAY_API_KEY = os.getenv("RAZORPAY_API_KEY")
+RAZORPAY_API_SECRET = os.getenv("RAZORPAY_API_SECRET")
 
 
 CLOUDINARY_STORAGE = {

@@ -9,6 +9,8 @@ from django.contrib.auth import authenticate
 from .models import *
 from .serializers import *
 from .mails import send_email
+import razorpay
+import os,json
 from django.utils import timezone
 from django.db.models import Min
 
@@ -336,3 +338,64 @@ class ServiceCategoryListView(APIView):
         ]
         
         return Response(filtered_data, status=status.HTTP_200_OK)
+
+
+
+client = razorpay.Client(auth=(os.getenv("RAZORPAY_API_KEY"),os.getenv("RAZORPAY_API_SECRET")))
+
+class PaymentView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        try:
+            
+            totalPrice = request.data.get('formattedTotalPrice')
+
+            if not totalPrice:
+                return Response({"error": "Total cost is required."}, status=status.HTTP_400_BAD_REQUEST)
+            payment_data = {
+                "amount": float(totalPrice) * 100, 
+                "currency": "INR",
+                "payment_capture": 1  
+            }
+            payment_order = client.order.create(data=payment_data)
+
+            payment = Payment.objects.create(
+                user=request.user,  # If you have a user logged in, else make this optional
+                order_id=payment_order['id'],
+                amount=totalPrice,
+                currency='INR',
+                status='Pending'
+            )
+            return Response({
+                "order_id": payment_order['id'],
+                "amount": payment_data['amount'],
+                "currency": payment_data['currency'],
+                # "razorpay_key": settings.RAZORPAY_KEY_ID
+            }, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+class RazorpayWebhook(APIView):
+    def post(self, request, *args, **kwargs):
+        payload = request.body
+        signature = request.headers.get('X-Razorpay-Signature')
+
+        # Verify the signature with Razorpay
+        try:
+            client.utility.verify_webhook_signature(payload, signature, settings.RAZORPAY_WEBHOOK_SECRET)
+            event = json.loads(payload)
+
+            # Check for 'payment.captured' event and update payment status
+            if event['event'] == 'payment.captured':
+                order_id = event['payload']['payment']['entity']['order_id']
+                payment = Payment.objects.get(order_id=order_id)
+                payment.status = 'Paid'
+                payment.save()
+
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except:
+            return Response({"error": "Invalid signature."}, status=status.HTTP_400_BAD_REQUEST)
+

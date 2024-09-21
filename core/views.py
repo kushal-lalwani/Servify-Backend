@@ -13,7 +13,7 @@ import razorpay
 import os,json
 from django.utils import timezone
 from django.db.models import Min
-
+from django.conf import settings
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -370,7 +370,7 @@ class PaymentView(APIView):
                 "order_id": payment_order['id'],
                 "amount": payment_data['amount'],
                 "currency": payment_data['currency'],
-                # "razorpay_key": settings.RAZORPAY_KEY_ID
+                "status":payment.status
             }, status=status.HTTP_201_CREATED)
         
         except Exception as e:

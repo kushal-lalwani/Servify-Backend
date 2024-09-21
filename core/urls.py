@@ -17,6 +17,7 @@ urlpatterns = [
     path('place-order/', PlaceOrderView.as_view(), name='place-order'),
     path('employee/accept-order/<int:booking_id>/', AcceptOrderView.as_view(), name='accept-order'),
     path('employee/mark-completed/<int:booking_id>/', MarkOrderCompletedView.as_view(), name='mark-completed'),
+    path('list-service-categories/', ServiceCategoryListView.as_view(), name='service-category-list'),
     path('login/', LoginView.as_view(), name='login'),
     path('home/', HomePageAPIView.as_view(), name='home-page-api'),
     path('', include(router.urls)),

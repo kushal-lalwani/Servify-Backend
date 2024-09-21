@@ -95,16 +95,16 @@ class EmployeeSignupView(APIView):
         data = request.data
         username = data.get('username')
         password = data.get('password')
+        first_name = data.get('first_name') 
+        last_name = data.get('last_name')
         email = data.get('email')
         address = data.get('address')
-        service_category_ids = data.get('service_categories')  # Expecting service category IDs here
+        service_category_ids = data.get('service_categories')
         is_employee = data.get('is_employee', True)
 
-        # Validate the required fields
         if not username or not password or not email or not service_category_ids:
             return Response({'error': 'Username, password, email, and service categories are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if username or email already exists
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -112,7 +112,8 @@ class EmployeeSignupView(APIView):
             return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create User
-        user = User.objects.create_user(username=username, password=password, email=email)
+        user = User.objects.create_user(username=username, password=password, email=email,first_name=first_name,
+            last_name=last_name)
         user.save()
 
         # Create UserProfile
@@ -135,7 +136,7 @@ class EmployeeSignupView(APIView):
         if not service_categories.exists():
             return Response({'error': 'One or more service categories not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        employee.service_categories.set(service_categories)  # Assuming Employee model has 'service_categories'
+        employee.service_categories.set(service_categories)
         employee.save()
 
         return Response({'message': 'Employee created successfully'}, status=status.HTTP_201_CREATED)
@@ -209,7 +210,7 @@ class PlaceOrderView(APIView):
 
         for service_data in services_data:
             try:
-                service_id = service_data['service_id']
+                service_id = service_data['id']
                 service = Service.objects.get(id=service_id)
                 quantity = service_data.get('quantity', 1)
                 
@@ -321,3 +322,17 @@ class MarkOrderCompletedView(APIView):
             return Response({'message': 'Booking marked as completed'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Booking is not in confirmed status'}, status=status.HTTP_400_BAD_REQUEST)
+
+class ServiceCategoryListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        categories = ServiceCategory.objects.all()
+        serializer = ServiceCategorySerializer(categories, many=True)
+        
+        filtered_data = [
+            {"id": category['id'], "service-category": category['name']}
+            for category in serializer.data
+        ]
+        
+        return Response(filtered_data, status=status.HTTP_200_OK)

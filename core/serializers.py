@@ -5,9 +5,18 @@ from django.contrib.auth.models import User
 from .models import *
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
     class Meta:
         model = UserProfile
         fields = ['user', 'address', 'is_employee']
+
+    def get_user(self, obj):
+        return {
+            'username': obj.user.username,
+            'email': obj.user.email,
+            'first_name': obj.user.first_name,
+            'last_name': obj.user.last_name,
+        }
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
@@ -27,7 +36,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Employee
-        fields = ['profile', 'services', 'is_available', 'address']
+        fields = ['profile', 'service_categories', 'is_available', 'address']
 
     def create(self, validated_data):
         profile_data = validated_data.pop('profile')
@@ -37,6 +46,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return employee
 
 class ReviewSerializer(serializers.ModelSerializer):
+    service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    
     class Meta:
         model = Review
         fields = ['id', 'service', 'user', 'rating', 'comment', 'created_at']

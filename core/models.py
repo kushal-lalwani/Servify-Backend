@@ -30,11 +30,12 @@ class Service(models.Model):
         return self.name
 
 class Employee(models.Model):
-    profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE,null=True, blank=True)
-    services = models.ManyToManyField(Service)
+    profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
+    service_categories = models.ManyToManyField(ServiceCategory) 
     is_available = models.BooleanField(default=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
+    last_booking_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.profile.user.username
@@ -45,6 +46,8 @@ class Booking(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     date = models.DateTimeField()
     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('completed', 'Completed')])
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         return f'{self.user.username} - {self.service.name} - {self.status}'

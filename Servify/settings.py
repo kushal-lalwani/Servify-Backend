@@ -139,9 +139,9 @@ AUTH_PASSWORD_VALIDATORS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
+        'NAME': 'Servify',
         'USER': 'postgres',
-        'PASSWORD': '**',
+        'PASSWORD': '#',
         'HOST': 'localhost',
         'PORT': '5432',      
     }
@@ -160,6 +160,14 @@ cloudinary.config(
     api_key=CLOUDINARY_STORAGE['API_KEY'],
     api_secret=CLOUDINARY_STORAGE['API_SECRET']
 )
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'servify.notifications@gmail.com'
+EMAIL_HOST_PASSWORD = 'ioow rmrh icns gnux'
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 

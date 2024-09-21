@@ -13,6 +13,10 @@ router.register(r'reviews', ReviewViewSet)
 urlpatterns = [
     path('signup/user/', UserSignupView.as_view(), name='user-signup'),
     path('signup/employee/', EmployeeSignupView.as_view(), name='employee-signup'),
+    path('employee/dashboard/', EmployeeDashboardView.as_view(), name='employee-dashboard'),
+    path('place-order/', PlaceOrderView.as_view(), name='place-order'),
+    path('employee/accept-order/<int:booking_id>/', AcceptOrderView.as_view(), name='accept-order'),
+    path('employee/mark-completed/<int:booking_id>/', MarkOrderCompletedView.as_view(), name='mark-completed'),
     path('login/', LoginView.as_view(), name='login'),
     path('home/', HomePageAPIView.as_view(), name='home-page-api'),
     path('', include(router.urls)),

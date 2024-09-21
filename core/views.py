@@ -8,19 +8,35 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from .models import *
 from .serializers import *
+from .mails import send_email
+from django.utils import timezone
+from django.db.models import Min
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
+
+    def get_object(self):
+        user_id = self.kwargs['pk']
+        return UserProfile.objects.get(user__id=user_id)
 
 class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
@@ -35,11 +51,13 @@ class ServiceViewSet(viewsets.ModelViewSet):
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
 
 
 class BookingViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
 
@@ -58,15 +76,18 @@ class UserSignupView(APIView):
         if not username or not password:
             return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if UserProfile.objects.filter(user__username=username).exists():
+        if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.create_user(username=username, password=password, email=email, first_name=first_name,
-                                        last_name=last_name)
-        UserProfile.objects.create(user=user, address=address, is_employee=False)
+        try:
+            user = User.objects.create_user(username=username, password=password, email=email, first_name=first_name,
+                                            last_name=last_name)
+            UserProfile.objects.create(user=user, address=address, is_employee=False)
+        except IntegrityError:
+            return Response({'error': 'A user with this username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        send_email(subject="Signup",message="Nice",recipient_list=[email])
 
         return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
-
 
 class EmployeeSignupView(APIView):
     permission_classes = [AllowAny]
@@ -76,16 +97,21 @@ class EmployeeSignupView(APIView):
         password = data.get('password')
         email = data.get('email')
         address = data.get('address')
-        service_ids = data.get('services')
+        service_category_ids = data.get('service_categories')  # Expecting service category IDs here
         is_employee = data.get('is_employee', True)
 
-        if not username or not password or not email or not service_ids:
-            return Response({'error': 'Username, password, email, and services are required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Validate the required fields
+        if not username or not password or not email or not service_category_ids:
+            return Response({'error': 'Username, password, email, and service categories are required'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Check if username or email already exists
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if User.objects.filter(email=email).exists():
+            return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create user
+        # Create User
         user = User.objects.create_user(username=username, password=password, email=email)
         user.save()
 
@@ -104,15 +130,15 @@ class EmployeeSignupView(APIView):
             is_available=True
         )
 
-        services = Service.objects.filter(id__in=service_ids)
-        if not services.exists():
-            return Response({'error': 'One or more services not found'}, status=status.HTTP_400_BAD_REQUEST)
+        # Fetch service categories and set them to the employee
+        service_categories = ServiceCategory.objects.filter(id__in=service_category_ids)
+        if not service_categories.exists():
+            return Response({'error': 'One or more service categories not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        employee.services.set(services)
+        employee.service_categories.set(service_categories)  # Assuming Employee model has 'service_categories'
         employee.save()
 
         return Response({'message': 'Employee created successfully'}, status=status.HTTP_201_CREATED)
-
 
 
 
@@ -168,3 +194,130 @@ class HomePageAPIView(APIView):
             response_data[category['name']] = category['services']
         
         return Response(response_data)
+
+
+
+class PlaceOrderView(APIView):
+    def post(self, request):
+        user = request.user
+        services_data = request.data.get('services')  
+
+        if not services_data:
+            return Response({'error': 'No services provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_bookings = []
+
+        for service_data in services_data:
+            try:
+                service_id = service_data['service_id']
+                service = Service.objects.get(id=service_id)
+                quantity = service_data.get('quantity', 1)
+                
+                employee = Employee.objects.filter(service_categories=service.category, is_available=True)\
+                                            .order_by('last_booking_date').first()
+
+                if not employee:
+                    return Response({'error': f'No available employee for category {service.category.name}'}, status=status.HTTP_404_NOT_FOUND)
+
+                total_price = service.price * quantity
+
+                booking = Booking.objects.create(
+                    user=user,
+                    service=service,
+                    employee=employee,
+                    price=total_price,
+                    quantity=quantity,
+                    date=timezone.now(),
+                    status='pending'
+                )
+
+                employee.last_booking_date = timezone.now()
+                employee.save()
+
+                created_bookings.append(booking)
+
+            except Service.DoesNotExist:
+                return Response({'error': f'Service with id {service_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+            except KeyError:
+                return Response({'error': 'Invalid service data format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(BookingSerializer(created_bookings, many=True).data, status=status.HTTP_201_CREATED)
+
+
+class EmployeeDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            employee = Employee.objects.get(profile__user=request.user)
+
+            pending_bookings = Booking.objects.filter(employee=employee, status='pending')
+            confirmed_bookings = Booking.objects.filter(employee=employee, status='confirmed')
+            completed_bookings = Booking.objects.filter(employee=employee, status='completed')
+
+            pending_data = BookingSerializer(pending_bookings, many=True).data
+            confirmed_data = BookingSerializer(confirmed_bookings, many=True).data
+            completed_data = BookingSerializer(completed_bookings, many=True).data
+
+            return Response({
+                'pending': pending_data,
+                'confirmed': confirmed_data,
+                'completed': completed_data
+            }, status=200)
+        
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee profile not found'}, status=404)
+
+
+class AcceptOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booking_id):
+        try:
+            employee = request.user.userprofile.employee
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            booking = Booking.objects.get(id=booking_id, employee=employee)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found or not assigned to this employee'}, status=status.HTTP_404_NOT_FOUND)
+
+        if booking.status == 'pending':
+
+            booking.status = 'confirmed'
+            booking.save()
+
+            employee.is_available = False
+            employee.save()
+
+            return Response({'message': 'Booking accepted'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Booking is not in pending status'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class MarkOrderCompletedView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booking_id):
+        try:
+            employee = request.user.userprofile.employee
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            booking = Booking.objects.get(id=booking_id, employee=employee)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found or not assigned to this employee'}, status=status.HTTP_404_NOT_FOUND)
+
+        if booking.status == 'confirmed':
+            booking.status = 'completed'
+            booking.save()
+
+            employee.is_available = True
+            employee.save()
+
+            return Response({'message': 'Booking marked as completed'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Booking is not in confirmed status'}, status=status.HTTP_400_BAD_REQUEST)

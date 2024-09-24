@@ -41,10 +41,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class EmployeeSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
-
+    service_categories = serializers.SerializerMethodField()
     class Meta:
         model = Employee
         fields = ['profile', 'service_categories', 'is_available', 'address']
+    def get_service_categories(self, obj):
+        return [{'id': category.id, 'name': category.name} for category in obj.service_categories.all()]
 
     def create(self, validated_data):
         profile_data = validated_data.pop('profile')
@@ -56,7 +58,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     created_at = serializers.SerializerMethodField()
     service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    # user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     
     class Meta:
         model = Review

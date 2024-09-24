@@ -168,6 +168,15 @@ class LoginView(APIView):
         except UserProfile.DoesNotExist:
             return Response({'error': 'User profile does not exist'}, status=status.HTTP_400_BAD_REQUEST)
 
+        employee_id = None
+        if user_profile.is_employee:
+            try:
+                employee = Employee.objects.get(profile=user_profile)
+                employee_id = employee.id
+            except Employee.DoesNotExist:
+                employee_id = None  # In case there's no corresponding Employee record
+
+
         refresh = RefreshToken.for_user(user)
 
         return Response({
@@ -176,7 +185,8 @@ class LoginView(APIView):
             'user_id': user.id,
             'email': user.email,
             'username': user.username,
-            'is_employee': user_profile.is_employee
+            'is_employee': user_profile.is_employee,
+            'employee_id': employee_id
         }, status=status.HTTP_200_OK)
 
 

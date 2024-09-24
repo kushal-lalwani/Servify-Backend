@@ -6,9 +6,11 @@ from .models import *
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
-        fields = ['user', 'address', 'is_employee']
+        fields = ['user', 'address', 'is_employee', 'employee_id']
 
     def get_user(self, obj):
         return {
@@ -17,6 +19,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'first_name': obj.user.first_name,
             'last_name': obj.user.last_name,
         }
+
+    def get_employee_id(self, obj):
+        if obj.is_employee and hasattr(obj, 'employee'):
+            return obj.employee.id
+        return None
+
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
@@ -83,16 +91,22 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
 
 class BookingSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
-
+    service_name = serializers.CharField(source='service.name', read_only=True)
+    employee_name = serializers.CharField(source='employee.profile.user.username', read_only=True)
+    total_amount = serializers.SerializerMethodField()  # For total booking amount
 
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'service', 'employee', 'date', 'status']
+        fields = ['id', 'user', 'service_name', 'employee_name', 'date', 'status', 'quantity', 'price', 'total_amount']
 
     def get_date(self, obj):
-       ist_time = obj.date.astimezone(pytz.timezone('Asia/Kolkata'))
-       return ist_time.strftime("%Y-%m-%d %H:%M:%S")
+        # Convert the booking date to IST
+        ist_time = obj.date.astimezone(pytz.timezone('Asia/Kolkata'))
+        return ist_time.strftime("%Y-%m-%d %H:%M:%S")
 
+    def get_total_amount(self, obj):
+        # Calculate total amount by multiplying price by quantity
+        return obj.price * obj.quantity
 
 
 class PaymentSerializers(serializers.ModelSerializer):

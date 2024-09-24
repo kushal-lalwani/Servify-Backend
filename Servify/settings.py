@@ -143,7 +143,7 @@ AUTH_PASSWORD_VALIDATORS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Servify',
+        'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': '@',
         'HOST': 'localhost',

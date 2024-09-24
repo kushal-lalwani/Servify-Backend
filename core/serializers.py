@@ -56,7 +56,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         depth = 1  # This will show nested relationships (e.g., service name and user name)
 
     def get_created_at(self, obj):
-        ist_time = obj.date.astimezone(pytz.timezone('Asia/Kolkata'))
+        ist_time = obj.created_at.astimezone(pytz.timezone('Asia/Kolkata'))
         return ist_time.strftime("%Y-%m-%d %H:%M:%S")
 
 class ServiceSerializer(serializers.ModelSerializer):

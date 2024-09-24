@@ -145,7 +145,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'Servify',
         'USER': 'postgres',
-        'PASSWORD': '#',
+        'PASSWORD': '@',
         'HOST': 'localhost',
         'PORT': '5432',      
     }
@@ -164,6 +164,9 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': 'T3dnebMxeRe471zPeH7_Gk-X560',
 }
 
+
+USE_TZ = True  
+TIME_ZONE = 'Asia/Kolkata'
 
 cloudinary.config(
     cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],

@@ -46,6 +46,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return employee
 
 class ReviewSerializer(serializers.ModelSerializer):
+    created_at = serializers.SerializerMethodField()
     service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     
@@ -53,6 +54,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'service', 'user', 'rating', 'comment', 'created_at']
         depth = 1  # This will show nested relationships (e.g., service name and user name)
+
+    def get_created_at(self, obj):
+        ist_time = obj.date.astimezone(pytz.timezone('Asia/Kolkata'))
+        return ist_time.strftime("%Y-%m-%d %H:%M:%S")
 
 class ServiceSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
@@ -77,13 +82,21 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
         return obj.image.url if obj.image else None
 
 class BookingSerializer(serializers.ModelSerializer):
+    date = serializers.SerializerMethodField()
+
+
     class Meta:
         model = Booking
         fields = ['id', 'user', 'service', 'employee', 'date', 'status']
 
+    def get_date(self, obj):
+       ist_time = obj.date.astimezone(pytz.timezone('Asia/Kolkata'))
+       return ist_time.strftime("%Y-%m-%d %H:%M:%S")
+
 
 
 class PaymentSerializers(serializers.ModelSerializer):
+    
     class Meta:
         model=Payment
         fields=['user','order_id',' payment_id','signature','amount','currency',' status','created_at']

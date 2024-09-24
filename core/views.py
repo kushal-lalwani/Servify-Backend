@@ -10,7 +10,7 @@ from .models import *
 from .serializers import *
 from .mails import send_email
 import razorpay
-import os,json
+import os,json,pytz
 from django.utils import timezone
 from django.db.models import Min
 
@@ -399,3 +399,54 @@ class RazorpayWebhook(APIView):
         except:
             return Response({"error": "Invalid signature."}, status=status.HTTP_400_BAD_REQUEST)
 
+class RejectOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booking_id):
+        try:
+            # Get the employee making the request
+            employee = request.user.userprofile.employee
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            # Fetch the booking
+            booking = Booking.objects.get(id=booking_id, employee=employee, status='pending')
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found or not assigned to you'}, status=status.HTTP_404_NOT_FOUND)
+
+        service_category = booking.service.category
+        next_employee = Employee.objects.filter(
+            service_categories=service_category,
+            is_available=True
+        ).exclude(id=employee.id).order_by('last_booking_date').first()
+
+        if not next_employee:
+            return Response({'error': 'No other available employees for this service category'}, status=status.HTTP_404_NOT_FOUND)
+
+        booking.employee = next_employee
+        booking.save()
+
+        next_employee.last_booking_date = timezone.now()
+        next_employee.save()
+
+        return Response({
+            'message': f'Booking reassigned to {next_employee.profile.user.username}',
+            'new_employee': EmployeeSerializer(next_employee).data
+        }, status=status.HTTP_200_OK)
+
+
+class UserOrderHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user
+            bookings = Booking.objects.filter(user=user)
+            print(bookings)
+            serializer = BookingSerializer(bookings, many=True)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

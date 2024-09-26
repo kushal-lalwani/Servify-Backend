@@ -24,6 +24,6 @@ urlpatterns = [
     path('home/', HomePageAPIView.as_view(), name='home-page-api'),
     path('payment/', PaymentView.as_view(), name='payment'),
     # path('webhook/',RazorpayWebhook.as_view(),name='webhook'),
-    path('verfiypayment/',VerifyPaymentView.as_view(),name='verfiypayment'),
+    path('verifypayment/',VerifyPaymentView.as_view(),name='verifypayment'),
     path('', include(router.urls)),
 ]

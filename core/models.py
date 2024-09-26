@@ -79,3 +79,9 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.order_id} - {self.status}"
+    
+class Coupon(models.Model):
+    code=models.TextField(max_length=10,unique=True)
+    discount=models.DecimalField(max_digits=5)
+    active=models.BooleanField(default=True)
+

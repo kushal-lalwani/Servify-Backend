@@ -455,7 +455,22 @@ class VerifyPaymentView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+class ApplyCoupon(APIView):
+    def post(self,request):
+        code=request.data.get('code')
+        totalprice=request.data.get('totalPriceWithGST')
+        if totalprice<100:
+            return Response({"error":"Coupons Cannot Applied for Price less than 100"})
+        try:
+            coupon=Coupon.objects.get(code=code,active=True)
+        except Coupon.DoesNotExist:
+            return Response({"error":"Invalid Coupon"})
+        discount=coupon.discount
+        discount_amount=totalprice*(discount/100)
+        totalprice=totalprice-discount_amount
+        if totalprice<200:
+            return Response({"error":"Coupon Not Valid"})
+        return Response({"message":"Coupon Applied Successfully","discount":discount,'discounted_price':totalprice})
 
 class RejectOrderView(APIView):
     permission_classes = [IsAuthenticated]

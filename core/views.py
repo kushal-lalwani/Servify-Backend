@@ -359,7 +359,7 @@ class PaymentView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             
-            totalPrice = request.data.get('totalPriceGST')
+            totalPrice = request.data.get('totalPriceWithGST')
 
             if not totalPrice:
                 return Response({"error": "Total cost is required."}, status=status.HTTP_400_BAD_REQUEST)

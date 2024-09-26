@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.db.models import Min
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from razorpay import Client
 User = get_user_model()
 
 
@@ -370,7 +371,7 @@ class PaymentView(APIView):
             payment_order = client.order.create(data=payment_data)
 
             payment = Payment.objects.create(
-                user=request.user,  # If you have a user logged in, else make this optional
+                user=request.user,
                 order_id=payment_order['id'],
                 amount=totalPrice,
                 currency='INR',
@@ -388,26 +389,73 @@ class PaymentView(APIView):
         
 
 
-class RazorpayWebhook(APIView):
+# class RazorpayWebhook(APIView):
+    
+#     def post(self, request, *args, **kwargs):
+#         payload = request.body
+#         signature = request.headers.get('X-Razorpay-Signature')
+#         print(f"Received payload: {payload}")
+#         print(f"Received signature: {signature}")
+
+#         # Instantiate Razorpay client
+#         client = Client(auth=(os.getenv("RAZORPAY_API_KEY"),os.getenv("RAZORPAY_API_SECRET")))
+
+#         # Verify the signature with Razorpay
+#         try:
+#             client.utility.verify_webhook_signature(payload,signature)
+#             event = json.loads(payload)
+
+       
+#             if event['event'] == 'payment.captured':
+#                 order_id = event['payload']['payment']['entity']['order_id']
+#                 try:
+#                     payment = Payment.objects.get(order_id=order_id)
+#                     payment.status = 'Paid'
+#                     payment.save()
+#                 except Payment.DoesNotExist:
+#                     return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+#             return Response({"status": "success"}, status=status.HTTP_200_OK)
+        
+#         except Exception as e:
+#             # Log the exception for debugging purposes
+#             print(f"Webhook error: {str(e)}")
+#             return Response({"error": "Invalid signature."}, status=status.HTTP_400_BAD_REQUEST)
+        
+class VerifyPaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
-        payload = request.body
-        signature = request.headers.get('X-Razorpay-Signature')
-
-        # Verify the signature with Razorpay
         try:
-            client.utility.verify_webhook_signature(payload, signature, settings.RAZORPAY_WEBHOOK_SECRET)
-            event = json.loads(payload)
+            # Get payment ID and order ID from the frontend
+            razorpay_payment_id = request.data.get('razorpay_payment_id')
+            razorpay_order_id = request.data.get('razorpay_order_id')
 
-            # Check for 'payment.captured' event and update payment status
-            if event['event'] == 'payment.captured':
-                order_id = event['payload']['payment']['entity']['order_id']
-                payment = Payment.objects.get(order_id=order_id)
-                payment.status = 'Paid'
-                payment.save()
+            if not razorpay_payment_id or not razorpay_order_id:
+                return Response({"error": "Payment ID and Order ID are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response({"status": "success"}, status=status.HTTP_200_OK)
-        except:
-            return Response({"error": "Invalid signature."}, status=status.HTTP_400_BAD_REQUEST)
+            # Verify the payment with Razorpay
+            try:
+                client.payment.fetch(razorpay_payment_id)  # Fetch the payment details
+            except razorpay.errors.BadRequestError:
+                return Response({"error": "Invalid payment ID."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Fetch the corresponding Payment record
+            try:
+                payment = Payment.objects.get(order_id=razorpay_order_id, user=request.user)
+            except Payment.DoesNotExist:
+                return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Update payment status if verified successfully
+            payment.status = 'Paid'
+            payment.save()
+
+            return Response({"message": "Payment verified successfully.", "status": payment.status}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class RejectOrderView(APIView):
     permission_classes = [IsAuthenticated]

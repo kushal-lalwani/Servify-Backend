@@ -11,7 +11,7 @@ def get_ist_time():
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    address = models.CharField(max_length=255, blank=True, null=True)
+    address = models.TextFieldField(max_length=400, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
 
     def __str__(self):

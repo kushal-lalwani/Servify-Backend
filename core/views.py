@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from .models import *
 from .serializers import *
-from .mails import send_email
+from .mails import *
 import razorpay
 import os,json,pytz
 from django.utils import timezone
@@ -83,7 +83,7 @@ class UserSignupView(APIView):
             UserProfile.objects.create(user=user, address=address, is_employee=False)
         except IntegrityError:
             return Response({'error': 'A user with this username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-        send_email(subject="Signup",message="Nice",recipient_list=[email])
+        send_user_signup_email(user.email, user.username)
 
         return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
 
@@ -136,7 +136,7 @@ class EmployeeSignupView(APIView):
 
         employee.service_categories.set(service_categories)
         employee.save()
-
+        send_employee_signup_email(user.email, user.username)
         return Response({'message': 'Employee created successfully'}, status=status.HTTP_201_CREATED)
 
 
@@ -245,6 +245,9 @@ class PlaceOrderView(APIView):
 
                 created_bookings.append(booking)
 
+                send_order_placed_email(user.email, user.username, service.name, employee.user.username)
+                send_employee_order_assigned_email(employee.user.email, employee.user.username, service.name)
+
             except Service.DoesNotExist:
                 return Response({'error': f'Service with id {service_id} not found'}, status=status.HTTP_404_NOT_FOUND)
             except KeyError:
@@ -326,6 +329,8 @@ class MarkOrderCompletedView(APIView):
 
             employee.is_available = True
             employee.save()
+
+            send_order_completed_email(booking.user.email, booking.user.username, booking.service.name)
 
             return Response({'message': 'Booking marked as completed'}, status=status.HTTP_200_OK)
         else:
@@ -450,22 +455,22 @@ class VerifyPaymentView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class ApplyCoupon(APIView):
-    def post(self,request):
-        code=request.data.get('code')
-        totalprice=request.data.get('totalPriceWithGST')
-        if totalprice<100:
-            return Response({"error":"Coupons Cannot Applied for Price less than 100"})
-        try:
-            coupon=Coupon.objects.get(code=code,active=True)
-        except Coupon.DoesNotExist:
-            return Response({"error":"Invalid Coupon"})
-        discount=coupon.discount
-        discount_amount=totalprice*(discount/100)
-        totalprice=totalprice-discount_amount
-        if totalprice<200:
-            return Response({"error":"Coupon Not Valid"})
-        return Response({"message":"Coupon Applied Successfully","discount":discount,'discounted_price':totalprice})
+# class ApplyCoupon(APIView):
+#     def post(self,request):
+#         code=request.data.get('code')
+#         totalprice=request.data.get('totalPriceWithGST')
+#         if totalprice<100:
+#             return Response({"error":"Coupons Cannot Applied for Price less than 100"})
+#         try:
+#             coupon=Coupon.objects.get(code=code,active=True)
+#         except Coupon.DoesNotExist:
+#             return Response({"error":"Invalid Coupon"})
+#         discount=coupon.discount
+#         discount_amount=totalprice*(discount/100)
+#         totalprice=totalprice-discount_amount
+#         if totalprice<200:
+#             return Response({"error":"Coupon Not Valid"})
+#         return Response({"message":"Coupon Applied Successfully","discount":discount,'discounted_price':totalprice})
 
 class RejectOrderView(APIView):
     permission_classes = [IsAuthenticated]

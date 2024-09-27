@@ -13,6 +13,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     address = models.TextField(max_length=400, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
+    mobile = models.CharField(max_length=10, unique=True, blank=True, null=True)
     
     def __str__(self):
         return self.user.username

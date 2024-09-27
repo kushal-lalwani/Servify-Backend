@@ -23,5 +23,8 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('home/', HomePageAPIView.as_view(), name='home-page-api'),
     path('payment/', PaymentView.as_view(), name='payment'),
+    # path('webhook/',RazorpayWebhook.as_view(),name='webhook'),
+    path('verifypayment/',VerifyPaymentView.as_view(),name='verifypayment'),
+    path('apply-coupon/',ApplyCoupon.as_view(),name='apply-coupon'),
     path('', include(router.urls)),
 ]

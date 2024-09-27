@@ -32,7 +32,7 @@ load_dotenv()
 import os
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 CORS_ALLOW_ALL_ORIGINS = True
 # CORS_ALLOWED_ORIGINS = [
 #     "http://localhost:3000",
@@ -143,9 +143,9 @@ AUTH_PASSWORD_VALIDATORS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Servify',
+        'NAME': 'postgres',
         'USER': 'postgres',
-        'PASSWORD': '#',
+        'PASSWORD': 'KV@1234',
         'HOST': 'localhost',
         'PORT': '5432',      
     }
@@ -156,6 +156,7 @@ DATABASES = {
 
 RAZORPAY_API_KEY = os.getenv("RAZORPAY_API_KEY")
 RAZORPAY_API_SECRET = os.getenv("RAZORPAY_API_SECRET")
+# RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET')
 
 
 CLOUDINARY_STORAGE = {
@@ -205,3 +206,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

@@ -11,7 +11,7 @@ def get_ist_time():
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    address = models.CharField(max_length=255, blank=True, null=True)
+    address = models.TextField(max_length=400, blank=True, null=True)
     is_employee = models.BooleanField(default=False)
     
     def __str__(self):
@@ -79,3 +79,12 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.order_id} - {self.status}"
+    
+class Coupon(models.Model):
+    code=models.CharField(max_length=10,unique=True)
+    discount=models.DecimalField(max_digits=5,decimal_places=2)
+    active=models.BooleanField(default=True)
+
+
+    def __str__(self):
+        return f"{self.code} ({self.discount}% off)"

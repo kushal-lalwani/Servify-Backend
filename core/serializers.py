@@ -58,12 +58,23 @@ class EmployeeSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     created_at = serializers.SerializerMethodField()
     service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
-    # user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-    
+
     class Meta:
         model = Review
         fields = ['id', 'service', 'user', 'rating', 'comment', 'created_at']
-        depth = 1  # This will show nested relationships (e.g., service name and user name)
+
+    def get_created_at(self, obj):
+        return obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = {
+            'id': instance.user.id,
+            'username': instance.user.username,
+            'first_name':instance.user.first_name,
+            'last_name':instance.user.last_name,
+        }
+        return representation
 
     def get_created_at(self, obj):
         ist_time = obj.created_at.astimezone(pytz.timezone('Asia/Kolkata'))

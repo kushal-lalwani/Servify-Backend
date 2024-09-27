@@ -28,17 +28,12 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return UserProfile.objects.get(user__id=user_id)
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # You might want to use `IsAuthenticated` if only logged-in users can leave reviews
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]

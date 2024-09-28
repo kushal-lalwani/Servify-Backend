@@ -106,19 +106,19 @@ class BookingSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     service_name = serializers.CharField(source='service.name', read_only=True)
     employee_name = serializers.CharField(source='employee.profile.user.username', read_only=True)
-    total_amount = serializers.SerializerMethodField()  # For total booking amount
+    total_amount = serializers.SerializerMethodField()  
 
     class Meta:
         model = Booking
         fields = ['id', 'user', 'service' , 'service_name', 'employee_name', 'date', 'status', 'quantity', 'price', 'total_amount']
 
     def get_date(self, obj):
-        # Convert the booking date to IST
+        
         ist_time = obj.date.astimezone(pytz.timezone('Asia/Kolkata'))
         return ist_time.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_total_amount(self, obj):
-        # Calculate total amount by multiplying price by quantity
+
         return obj.price * obj.quantity
 
 

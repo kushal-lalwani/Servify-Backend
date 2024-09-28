@@ -29,7 +29,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return UserProfile.objects.get(user__id=user_id)
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]  # You might want to use `IsAuthenticated` if only logged-in users can leave reviews
+    permission_classes = [AllowAny]  
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
@@ -170,7 +170,7 @@ class LoginView(APIView):
                 employee = Employee.objects.get(profile=user_profile)
                 employee_id = employee.id
             except Employee.DoesNotExist:
-                employee_id = None  # In case there's no corresponding Employee record
+                employee_id = None  
 
 
         refresh = RefreshToken.for_user(user)
